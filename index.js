@@ -1,4 +1,4 @@
-require('env').config();
+require('.env').config();
 const express = require('express');
 const config = require('./config');
 const { Session, User, connectDB } = require('./database');
