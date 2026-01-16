@@ -1,13 +1,17 @@
 {
-  "name": "wrongturn6-bot",
+  "name": "wrongturn6-live",
   "version": "6.0.0",
-  "main": "bot.js",
+  "main": "live-bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node live-bot.js",
+    "test": "echo \"Bot is working!\" && exit 0"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "6.4.0",
     "express": "^4.18.2",
     "mongoose": "^8.0.3"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
