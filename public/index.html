@@ -4,59 +4,72 @@
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>WRONG TURN 6 | iOS 26</title>
     <style>
-        :root { --red: #ff0000; --black: #000; --glass: rgba(255, 0, 0, 0.05); }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; -webkit-touch-callout: none; }
+        :root { --red: #ff0000; --black: #000; --glass: rgba(255, 255, 255, 0.03); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
         body { background: var(--black); height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .iphone { width: 380px; height: 800px; background: #050505; border-radius: 65px; border: 2.5px solid var(--red); position: relative; padding: 12px; box-shadow: 0 0 80px rgba(255, 0, 0, 0.5); }
-        .dynamic-island { width: 140px; height: 35px; background: #000; position: absolute; top: 15px; left: 50%; transform: translateX(-50%); border-radius: 20px; border: 1px solid #1a1a1a; z-index: 100; }
-        .screen { background: #000; height: 100%; border-radius: 55px; display: flex; flex-direction: column; align-items: center; padding-top: 80px; position: relative; overflow: hidden; }
+        .iphone { width: 380px; height: 800px; background: #080808; border-radius: 65px; border: 2.5px solid var(--red); position: relative; padding: 12px; box-shadow: 0 0 80px rgba(255, 0, 0, 0.5); }
+        .notch { width: 140px; height: 35px; background: #000; position: absolute; top: 15px; left: 50%; transform: translateX(-50%); border-radius: 20px; z-index: 100; border: 1px solid #1a1a1a; }
+        .screen { background: #000; height: 100%; border-radius: 55px; display: flex; flex-direction: column; align-items: center; padding-top: 60px; position: relative; overflow-y: auto; scrollbar-width: none; }
         h1 { color: var(--red); font-size: 32px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 20px var(--red); }
-        .dev { color: #444; font-size: 11px; margin-bottom: 50px; text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 85%; padding: 22px; background: var(--glass); border: 1px solid #222; border-radius: 25px; color: #fff; font-size: 18px; text-align: center; outline: none; margin-bottom: 25px; transition: 0.5s; border: 1px solid rgba(255,0,0,0.1); }
-        input:focus { border-color: var(--red); box-shadow: 0 0 25px var(--red); }
-        .btn { width: 85%; padding: 22px; background: var(--red); color: #fff; border: none; border-radius: 25px; font-weight: 900; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
-        #pairCode { margin-top: 50px; font-size: 45px; font-weight: 900; color: #fff; text-shadow: 0 0 30px var(--red); letter-spacing: 12px; cursor: pointer; }
+        .dev { color: #555; font-size: 11px; margin-bottom: 30px; text-transform: uppercase; }
+        
+        .instructions { width: 85%; background: var(--glass); border: 1px solid #222; border-radius: 20px; padding: 15px; margin-bottom: 20px; font-size: 12px; color: #aaa; text-align: left; line-height: 1.6; }
+        .instructions b { color: var(--red); }
+
+        input { width: 85%; padding: 20px; background: var(--glass); border: 1px solid #222; border-radius: 25px; color: #fff; font-size: 18px; text-align: center; outline: none; margin-bottom: 20px; }
+        .btn { width: 85%; padding: 20px; background: var(--red); color: #fff; border: none; border-radius: 25px; font-weight: 900; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        
+        #pairCode { margin-top: 30px; font-size: 45px; font-weight: 900; color: #fff; text-shadow: 0 0 30px var(--red); letter-spacing: 12px; cursor: pointer; display: none; }
         .flower { position: absolute; font-size: 24px; opacity: 0.2; pointer-events: none; }
-        .f1 { top: 110px; left: 30px; } .f2 { top: 130px; right: 30px; } .f3 { bottom: 160px; left: 40px; }
-        .footer { margin-top: auto; padding-bottom: 35px; text-align: center; }
-        .footer a { color: var(--red); text-decoration: none; font-size: 12px; font-weight: bold; margin: 0 15px; }
-        .home-bar { width: 130px; height: 5px; background: #fff; border-radius: 10px; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); opacity: 0.1; }
+        .f1 { top: 80px; left: 20px; } .f2 { top: 80px; right: 20px; }
+        .footer { margin-top: 20px; padding-bottom: 20px; }
+        .footer a { color: var(--red); text-decoration: none; font-size: 12px; margin: 0 10px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="iphone">
         <div class="notch"></div>
-        <div class="flower f1">🌸</div> <div class="flower f2">🌺</div> <div class="flower f3">🌻</div>
+        <div class="flower f1">🌸</div><div class="flower f2">🌺</div>
         <div class="screen">
-            <h1>WRONG TURN 6</h1>
+            <h1>Wrong Turn 6</h1>
             <p class="dev">DEVELOPER: STANYTZ</p>
+            
+            <div class="instructions">
+                <b>HOW TO LINK:</b><br>
+                1. Enter your WhatsApp number below.<br>
+                2. Tap <b>"Generate Code"</b> and wait 15s.<br>
+                3. Copy the code that appears.<br>
+                4. Open WhatsApp -> Settings -> Linked Devices.<br>
+                5. Tap <b>"Link with phone number instead"</b>.<br>
+                6. Paste the code and you are <b>LIVE!</b>
+            </div>
+
             <input type="text" id="phone" placeholder="Ex: 255618558502">
-            <button class="btn" onclick="getPair()">INITIALIZE ENGINE</button>
+            <button class="btn" onclick="getPair()">Generate Code</button>
             <div id="pairCode" onclick="copyCode()">---- ----</div>
+
             <div class="footer">
-                <a href="https://whatsapp.com/channel/0029Vb7fzu4EwEjmsD4Tzs1p">CHANNEL</a>
-                <a href="https://chat.whatsapp.com/J19JASXoaK0GVSoRvShr4Y">GROUP</a>
+                <a href="https://whatsapp.com/channel/0029Vb7fzu4EwEjmsD4Tzs1p">Channel</a>
+                <a href="https://chat.whatsapp.com/J19JASXoaK0GVSoRvShr4Y">Group</a>
             </div>
         </div>
-        <div class="home-bar"></div>
     </div>
     <script>
         async function getPair() {
             const num = document.getElementById('phone').value;
             const box = document.getElementById('pairCode');
-            if(!num) return; box.innerText = "WAIT";
+            if(!num) return alert("Enter Number!");
+            box.style.display = 'block';
+            box.innerText = "WAITING...";
             try {
-                const res = await fetch(`/get-pair?num=${num}`);
+                const res = await fetch(`/get-code?num=${num}`);
                 const data = await res.json();
-                box.innerText = data.code || "ERR";
-            } catch (e) { box.innerText = "FAIL"; }
+                box.innerText = data.code || "FAIL";
+            } catch (e) { box.innerText = "ERROR"; }
         }
         function copyCode() {
             const code = document.getElementById('pairCode').innerText;
-            if(code.length > 5) {
-                navigator.clipboard.writeText(code);
-                alert("Pairing Code Copied!");
-            }
+            if(code.length > 5) { navigator.clipboard.writeText(code); alert("Code Copied!"); }
         }
     </script>
 </body>
