@@ -1,151 +1,158 @@
-const { default: makeWASocket, useMultiFileAuthState, Browsers, delay, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, Browsers, delay, makeCacheableSignalKeyStore, jidDecode } = require("@whiskeysockets/baileys");
 const express = require("express");
 const pino = require("pino");
 const mongoose = require("mongoose");
 const axios = require("axios");
+const cron = require("node-cron");
 const config = require("./config");
+const path = require("path");
 
 const app = express();
+const port = process.env.PORT || 3000;
 app.use(express.static('public'));
 
-// MongoDB Atlas
-mongoose.connect(config.mongoUri).then(() => console.log("Database Connected"));
+// 1. DATABASE CONNECTION
+mongoose.connect(config.mongoUri).then(() => console.log("✅ Database Connected Successfully!"));
 
-async function startBot(num = null, res = null) {
-    const { state, saveCreds } = await useMultiFileAuthState(`sessions/${num || 'master'}`);
+async function startEngine(num = null, res = null) {
+    const { state, saveCreds } = await useMultiFileAuthState('session_wt6');
+    
     const sock = makeWASocket({
-        auth: state,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
+        },
+        printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: Browsers.macOS("Desktop"),
-        printQRInTerminal: false
+        // FIXED BROWSER IDENTITY FOR IPHONE PAIRING
+        browser: ["Ubuntu", "Chrome", "20.0.04"] 
     });
 
     if (!sock.authState.creds.registered && num) {
-        await delay(3000);
-        const code = await sock.requestPairingCode(num.trim());
+        await delay(5000);
+        let code = await sock.requestPairingCode(num.trim());
         if (res) res.json({ code });
+        console.log(`🔑 PAIRING CODE GENERATED: ${code}`);
     }
 
     sock.ev.on("creds.update", saveCreds);
 
+    // AUTO-PRESENCE & CONNECTION UPDATE
+    sock.ev.on("connection.update", (u) => {
+        const { connection } = u;
+        if (connection === "open") {
+            console.log("🚀 WRONG TURN 6 IS LIVE!");
+            sock.sendPresenceUpdate('available');
+        }
+        if (connection === "close") startEngine();
+    });
+
+    // MESSAGE HANDLER
     sock.ev.on("messages.upsert", async ({ messages }) => {
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
+
         const from = msg.key.remoteJid;
         const body = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+        
+        // AUTO-TYPE BEFORE REPLY
+        if (body.startsWith(config.prefix)) {
+            await sock.sendPresenceUpdate('composing', from);
+        }
 
-        // Auto Typing/Recording
-        await sock.sendPresenceUpdate('composing', from);
+        const arg = body.slice(config.prefix.length).trim().split(/ +/g);
+        const cmd = arg.shift().toLowerCase();
+        const q = arg.join(" ");
 
         if (body.startsWith(config.prefix)) {
-            const cmd = body.slice(config.prefix.length).trim().split(' ')[0].toLowerCase();
-            const q = body.slice(config.prefix.length + cmd.length).trim();
-
             switch (cmd) {
                 case 'menu':
-                    const menu = `┏━━━『 *WRONG TURN 6* 』━━━┓
+                    const menuText = `┏━━━『 *WRONG TURN 6* 』━━━┓
 ┃ 👤 *Dev:* STANYTZ
-┃ 🚀 *Status:* Online
+┃ ⚡ *Mode:* Universal Omni-OS
 ┗━━━━━━━━━━━━━━━━━━━━┛
 
   『 *WEALTH & FINANCE* 』
 ┃ ➥ .livescore (Live Football)
-┃ ➥ .arbitrage (Crypto Gap)
+┃ ➥ .arbitrage (Crypto Gaps)
 ┃ ➥ .forex (Live Signals)
-┃ ➥ .crypto (Coin Prices)
-┃ ➥ .binance (Top Gainers)
+┃ ➥ .crypto (Binance Price)
 ┃ ➥ .odds (Sure 2+ Tips)
 ┃ ➥ .jobs (Remote Work)
-┃ ➥ .stock (Market Prices)
 
   『 *EDUCATION & AI* 』
-┃ ➥ .gpt (Ask Everything)
-┃ ➥ .solve (Math Solution)
+┃ ➥ .gpt (Unlimited AI Brain)
+┃ ➥ .solve (Math/Code solver)
 ┃ ➥ .wiki (Research Hub)
-┃ ➥ .translate (Global Lang)
-┃ ➥ .course (Free Learning)
-┃ ➥ .pdf (Docs Manager)
+┃ ➥ .translate (100+ Lang)
+┃ ➥ .pdf (Professional PDF)
 
   『 *MEDIA & DOWNLOAD* 』
-┃ ➥ .tt (TikTok HD)
-┃ ➥ .ig (Insta Reels)
-┃ ➥ .yt (YouTube Download)
-┃ ➥ .spotify (HQ Music)
-┃ ➥ .fb (Facebook Video)
-┃ ➥ .sticker (Fast Maker)
-┃ ➥ .lyrics (Song Words)
-
-  『 *HEALTH & LIFE* 』
-┃ ➥ .doctor (Symptom AI)
-┃ ➥ .health (Tips & Advice)
-┃ ➥ .diet (Weight Loss)
-┃ ➥ .recipe (Cooking Hub)
+┃ ➥ .tt (TikTok HD Download)
+┃ ➥ .ig (Insta Reels Download)
+┃ ➥ .yt (YouTube Audio/Video)
+┃ ➥ .spotify (HQ Music Download)
+┃ ➥ .sticker (Image to Sticker)
 
   『 *ADMIN & CONTROL* 』
 ┃ ➥ .hidetag (Mention All)
 ┃ ➥ .kick (Remove Member)
 ┃ ➥ .add (Add Member)
-┃ ➥ .promote (Make Admin)
-┃ ➥ .restart (Reboot Bot)
-
-  『 *FAITH & GLOBAL* 』
-┃ ➥ .bible (Daily Verse)
-┃ ➥ .quran (Ayah of Day)
-┃ ➥ .news (Breaking News)
-┃ ➥ .weather (Live Forecast)
+┃ ➥ .restart (Reboot Engine)
 
 ┗━━━━━━━━━━━━━━━━━━━━┛
 🔗 *Channel:* ${config.channelLink}
 🔗 *Group:* ${config.groupLink}`;
                     await sock.sendMessage(from, { 
                         image: { url: config.menuImage }, 
-                        caption: menu 
+                        caption: menuText 
                     });
                     break;
 
-                // --- API INTEGRATED COMMANDS ---
-                case 'tt': // TikTok Downloader API
-                    try {
-                        const ttRes = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${q}`);
-                        await sock.sendMessage(from, { video: { url: ttRes.data.video.noWatermark }, caption: "Done By WT6" });
-                    } catch (e) { await sock.sendMessage(from, { text: "Error fetching TikTok video." }); }
+                // --- API FUNCTIONALITIES ---
+                case 'tt':
+                    if (!q) return sock.sendMessage(from, { text: "Provide TikTok URL!" });
+                    const ttData = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${q}`);
+                    await sock.sendMessage(from, { video: { url: ttData.data.video.noWatermark }, caption: "Downloaded by WT6" });
                     break;
 
-                case 'crypto': // Crypto Price API
-                    try {
-                        const coin = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd');
-                        await sock.sendMessage(from, { text: `💰 *LIVE MARKET*\n\nBTC: $${coin.data.bitcoin.usd}\nETH: $${coin.data.ethereum.usd}` });
-                    } catch (e) { await sock.sendMessage(from, { text: "Market API down." }); }
+                case 'crypto':
+                    const coin = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd');
+                    await sock.sendMessage(from, { text: `💰 *LIVE MARKET*\n\nBTC: $${coin.data.bitcoin.usd}\nETH: $${coin.data.ethereum.usd}` });
                     break;
 
-                case 'gpt': // AI Proxy API
-                    try {
-                        const ai = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(q)}&lc=en`);
-                        await sock.sendMessage(from, { text: `🤖 *WT6 AI:* ${ai.data.success}` });
-                    } catch (e) { await sock.sendMessage(from, { text: "AI is sleeping." }); }
+                case 'livescore':
+                    await sock.sendMessage(from, { text: "⚽ *LIVE FOOTBALL:*\n1. Arsenal 2-1 Man Utd (80')\n2. Real Madrid 0-0 Barca (15')" });
                     break;
 
-                case 'livescore': // Real Score Data
-                    await sock.sendMessage(from, { text: "⚽ *LIVE UPDATES*\n\nArsenal 2-1 Man Utd (80')\nReal Madrid 0-0 Barca (15')" });
+                case 'gpt':
+                    const ai = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(q)}&lc=en`);
+                    await sock.sendMessage(from, { text: `🤖 *AI:* ${ai.data.success}` });
                     break;
 
-                case 'hidetag': // Admin Only
-                    const meta = await sock.groupMetadata(from);
-                    await sock.sendMessage(from, { text: q || 'Hello Everyone!', mentions: meta.participants.map(v => v.id) });
-                    break;
-
-                case 'restart': // Owner Only
-                    if (from.includes(config.ownerNumber)) process.exit();
+                case 'restart':
+                    if (from.includes(config.ownerNumber)) {
+                        await sock.sendMessage(from, { text: "🚀 Restarting Engine..." });
+                        process.exit();
+                    }
                     break;
             }
         }
     });
-
-    sock.ev.on("connection.update", (u) => {
-        if (u.connection === "open") console.log("WRONG TURN 6 CONNECTED");
-        if (u.connection === "close") startBot();
-    });
 }
 
-app.get("/get-code", (req, res) => startBot(req.query.num, res));
-app.listen(3000, () => startBot());
+// 3. WEB API FOR PAIRING
+app.get("/get-code", (req, res) => {
+    const num = req.query.num;
+    if (!num) return res.json({ error: "No number provided" });
+    startEngine(num, res);
+});
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, '/public/index.html'));
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+    startEngine(); // Initial master start
+});
