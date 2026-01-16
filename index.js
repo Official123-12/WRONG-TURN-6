@@ -2,8 +2,6 @@ const { default: makeWASocket, delay, makeCacheableSignalKeyStore, DisconnectRea
 const express = require("express");
 const pino = require("pino");
 const mongoose = require("mongoose");
-const fs = require("fs");
-const path = require("path");
 const config = require("./config");
 const { Session } = require("./database");
 const { commandHandler } = require("./handler");
@@ -12,24 +10,6 @@ const app = express();
 app.use(express.static('public'));
 
 let sock;
-global.commands = new Map();
-
-const loadCommands = () => {
-    const commandsPath = path.join(__dirname, 'commands');
-    if (!fs.existsSync(commandsPath)) return;
-    const folders = fs.readdirSync(commandsPath);
-    for (const folder of folders) {
-        const folderPath = path.join(commandsPath, folder);
-        if (fs.statSync(folderPath).isDirectory()) {
-            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js'));
-            for (const file of files) {
-                const cmd = require(path.join(folderPath, file));
-                global.commands.set(cmd.name, cmd);
-            }
-        }
-    }
-    console.log(`✅ ${global.commands.size} Commands Operational.`);
-};
 
 async function useMongoDBAuthState() {
     let session = await Session.findOne({ id: "stanytz_wt6_matrix" });
@@ -51,28 +31,27 @@ async function startEngine(num = null, res = null) {
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
         browser: ["Ubuntu", "Chrome", "20.0.04"],
-        syncFullHistory: true
+        syncFullHistory: false // Speed boost
     });
 
     sock.ev.on("creds.update", saveCreds);
 
     if (!sock.authState.creds.registered && num) {
         try {
-            await delay(15000); // 15s delay to fix Precondition/FAIL errors
+            await delay(8000); // Wait for Render to breathe
             const code = await sock.requestPairingCode(num.trim());
-            if (res && !res.headersSent) res.json({ code });
+            if (res && !res.headersSent) return res.json({ code });
         } catch (e) {
-            if (res && !res.headersSent) res.status(500).json({ error: "System Busy" });
+            if (res && !res.headersSent) return res.status(500).json({ error: "System Busy" });
         }
     }
 
     sock.ev.on("connection.update", async (u) => {
         const { connection, lastDisconnect } = u;
         if (connection === "open") {
-            console.log("🚀 WRONG TURN 6 CONNECTED");
+            console.log("✅ WRONG TURN 6 ONLINE");
             await sock.sendPresenceUpdate('available');
-            const welcome = `🚀 *WRONG TURN 6 IS LIVE* 🚀\n\n*Developer:* STANYTZ ✔️\n*Status:* Cloud Secured ✅\n\n*SYSTEM READY:*\n1. Type *.menu* to see 500+ Hubs.\n2. Commands for Hackers, Students, and Bettors are active.\n3. Anti-Delete & View-Once are [ENABLED].\n\n_Enjoy the Matrix._`;
-            await sock.sendMessage(sock.user.id, { text: welcome });
+            await sock.sendMessage(sock.user.id, { text: "🚀 *WRONG TURN 6 CONNECTED*\n\nSession secured." });
         }
         if (connection === "close") {
             if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) startEngine();
@@ -84,6 +63,5 @@ async function startEngine(num = null, res = null) {
     });
 }
 
-loadCommands();
 app.get("/get-code", (req, res) => startEngine(req.query.num, res));
 app.listen(process.env.PORT || 3000, () => startEngine());
