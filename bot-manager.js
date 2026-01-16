@@ -251,7 +251,6 @@ const showMenu = async (sock, from, sessionData) => {
 ║  📁 *GROUP COMMANDS*
 ║  • ${config.prefix}antilink [on/off]
 ║  • ${config.prefix}welcome [on/off]
-║  • ${config.prefix}kick @user
 ║  ────────────────────────
 ║  📁 *MEDIA TOOLS*
 ║  • ${config.prefix}sticker
