@@ -2,8 +2,6 @@ const { default: makeWASocket, delay, makeCacheableSignalKeyStore, DisconnectRea
 const express = require("express");
 const pino = require("pino");
 const mongoose = require("mongoose");
-const fs = require("fs");
-const path = require("path");
 const config = require("./config");
 const { Session } = require("./database");
 const { commandHandler } = require("./handler");
@@ -12,55 +10,49 @@ const app = express();
 app.use(express.static('public'));
 
 let sock;
-global.commands = new Map();
 
-// Dynamic Command Loader
-const loadCommands = () => {
-    const cmdPath = path.join(__dirname, 'commands');
-    if (!fs.existsSync(cmdPath)) return;
-    fs.readdirSync(cmdPath).forEach(dir => {
-        const folder = path.join(cmdPath, dir);
-        if (fs.statSync(folder).isDirectory()) {
-            fs.readdirSync(folder).filter(f => f.endsWith('.js')).forEach(file => {
-                const cmd = require(path.join(folder, file));
-                global.commands.set(cmd.name, cmd);
-            });
+// Logic ya kuhifadhi Session kule MongoDB
+async function useMongoDBAuthState() {
+    let session = await Session.findOne({ id: "stanytz_wt6_core" });
+    const creds = session ? session.creds : initAuthCreds();
+    return {
+        state: { creds, keys: makeCacheableSignalKeyStore(creds, pino({ level: "silent" })) },
+        saveCreds: async () => {
+            await Session.findOneAndUpdate({ id: "stanytz_wt6_core" }, { creds: sock.authState.creds }, { upsert: true });
         }
-    });
-};
+    };
+}
 
 async function startEngine(num = null, res = null) {
     if (mongoose.connection.readyState !== 1) await mongoose.connect(config.mongoUri);
-    
-    // MONGODB AUTH LOGIC (No Local Files)
-    let cloud = await Session.findOne({ id: "stanytz_matrix_session" });
-    const creds = cloud ? cloud.creds : initAuthCreds();
+    const { state, saveCreds } = await useMongoDBAuthState();
 
     sock = makeWASocket({
-        auth: { creds, keys: makeCacheableSignalKeyStore(creds, pino({ level: "silent" })) },
+        auth: state,
+        printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: ["WRONG TURN 6", "Chrome", "20.0.04"],
-        syncFullHistory: true
+        // HII NDIO FIX: Identity ya Mac OS Chrome
+        browser: ["Mac OS", "Chrome", "10.15.7"],
+        syncFullHistory: true,
+        markOnlineOnConnect: true
     });
 
-    sock.ev.on("creds.update", async () => {
-        await Session.findOneAndUpdate({ id: "stanytz_matrix_session" }, { creds: sock.authState.creds }, { upsert: true });
-    });
+    sock.ev.on("creds.update", saveCreds);
 
     if (!sock.authState.creds.registered && num) {
-        await delay(15000); // 15s delay to fix FAIL error
         try {
+            await delay(12000); // Wait for Render to stabilize
             const code = await sock.requestPairingCode(num.trim());
             if (res) res.json({ code });
-        } catch (e) { if (res) res.status(500).json({ error: "Matrix Choked" }); }
+        } catch (e) { if (res) res.status(500).json({ error: "WhatsApp Refused. Try again." }); }
     }
 
     sock.ev.on("connection.update", async (u) => {
         const { connection, lastDisconnect } = u;
         if (connection === "open") {
-            console.log("✅ WRONG TURN 6 CONNECTED");
+            console.log("🚀 WRONG TURN 6 CONNECTED!");
             await sock.sendPresenceUpdate('available');
-            const welcome = `🚀 *WRONG TURN 6 CONNECTED* 🚀\n\nWelcome Master *STANYTZ*.\n\n*STATUS:* Cloud Secured ✅\n*IDENTITY:* Verified Identity ✔️\n\n_System active. Type .menu to begin._`;
+            const welcome = `🚀 *WRONG TURN 6 CONNECTED* 🚀\n\nWelcome Master *STANYTZ*.\n\n*STATUS:* Cloud Secured ✅\n*IDENTITY:* Verified ✔️\n\n_System active. Type .menu to begin._`;
             await sock.sendMessage(sock.user.id, { text: welcome });
         }
         if (connection === "close") {
@@ -73,6 +65,5 @@ async function startEngine(num = null, res = null) {
     });
 }
 
-loadCommands();
 app.get("/get-code", (req, res) => startEngine(req.query.num, res));
 app.listen(process.env.PORT || 3000, () => startEngine());
