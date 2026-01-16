@@ -1,30 +1,44 @@
 const { 
-    default: makeWASocket, 
-    delay, 
-    makeCacheableSignalKeyStore, 
-    DisconnectReason, 
-    initAuthCreds, // Hapa ndio tumerekebisha!
-    useMultiFileAuthState 
+    default: makeWASocket, delay, makeCacheableSignalKeyStore, 
+    DisconnectReason, initAuthCreds, useMultiFileAuthState 
 } = require("@whiskeysockets/baileys");
 const express = require("express");
 const pino = require("pino");
 const mongoose = require("mongoose");
 const config = require("./config");
-const { Session, User } = require("./database");
+const { Session } = require("./database");
 const { commandHandler } = require("./handler");
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.static('public'));
 
 let sock;
+global.commands = new Map();
 
-// --- CLOUD AUTH LOGIC (MONGODB) ---
+// --- 1. DYNAMIC COMMAND LOADER ---
+const loadCommands = () => {
+    const commandsPath = path.join(__dirname, 'commands');
+    if (!fs.existsSync(commandsPath)) return;
+    const folders = fs.readdirSync(commandsPath);
+    for (const folder of folders) {
+        const folderPath = path.join(commandsPath, folder);
+        if (fs.statSync(folderPath).isDirectory()) {
+            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js'));
+            for (const file of files) {
+                const cmd = require(path.join(folderPath, file));
+                global.commands.set(cmd.name, cmd);
+            }
+        }
+    }
+    console.log(`✅ Loaded ${global.commands.size} Commands`);
+};
+
+// --- 2. MONGODB AUTH STATE ---
 async function useMongoDBAuthState() {
-    let session = await Session.findOne({ id: "stanytz_wt6_matrix" });
-    
-    // Kama session ipo, itumie. Kama haipo, tengeneza creds mpya
+    let session = await Session.findOne({ id: "stanytz_wt6_session" });
     const creds = session ? session.creds : initAuthCreds();
-
     return {
         state: {
             creds,
@@ -32,7 +46,7 @@ async function useMongoDBAuthState() {
         },
         saveCreds: async () => {
             await Session.findOneAndUpdate(
-                { id: "stanytz_wt6_matrix" },
+                { id: "stanytz_wt6_session" },
                 { creds },
                 { upsert: true }
             );
@@ -40,8 +54,7 @@ async function useMongoDBAuthState() {
     };
 }
 
-async function startEngine(num = null, res = null) {
-    // Hakikisha DB imeunganishwa kwanza
+async function startBot() {
     if (mongoose.connection.readyState !== 1) {
         await mongoose.connect(config.mongoUri);
     }
@@ -56,31 +69,18 @@ async function startEngine(num = null, res = null) {
         syncFullHistory: true
     });
 
-    // PAIRING LOGIC (Fixed for Precondition Error)
-    if (!sock.authState.creds.registered && num) {
-        try {
-            console.log(`Matrix: Deploying Pairing for ${num}`);
-            await delay(15000); // 15s Delay kuzuia Render Choking
-            const code = await sock.requestPairingCode(num.trim());
-            if (res && !res.headersSent) res.json({ code });
-        } catch (e) {
-            console.error("Pairing Error:", e.message);
-            if (res && !res.headersSent) res.status(500).json({ error: "System Booting... Try again in 30s" });
-        }
-    }
-
     sock.ev.on("creds.update", saveCreds);
 
     sock.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "open") {
-            console.log("🚀 WRONG TURN 6: ENGINE 100% LIVE ON CLOUD!");
+            console.log("🚀 WRONG TURN 6: CONNECTED!");
             await sock.sendPresenceUpdate('available'); 
-            await sock.sendMessage(sock.user.id, { text: "🚀 *WRONG TURN 6 CONNECTED!*\n\nMaster: *STANYTZ*\nSession: *Cloud Secured* ✅" });
+            await sock.sendMessage(sock.user.id, { text: "🚀 *WRONG TURN 6 IS LIVE!* \n\nSession secured in MongoDB Cloud. Bot will not logout." });
         }
         if (connection === "close") {
             const reason = lastDisconnect?.error?.output?.statusCode;
-            if (reason !== DisconnectReason.loggedOut) startEngine();
+            if (reason !== DisconnectReason.loggedOut) startBot();
         }
     });
 
@@ -89,15 +89,27 @@ async function startEngine(num = null, res = null) {
     });
 }
 
-// Pair Endpoint kwa ajili ya Website yako
+// --- 3. WEB API ---
 app.get("/get-code", async (req, res) => {
     const num = req.query.num;
-    if (!num) return res.status(400).json({ error: "Provide Number!" });
-    await startEngine(num, res);
+    if (!num) return res.status(400).json({ error: "Number required" });
+
+    try {
+        if (!sock || sock.authState.creds.registered) {
+            return res.json({ error: "Bot already linked or engine not ready. Restart Render." });
+        }
+        // Subiri sekunde 10 ili socket itulize connection
+        await delay(10000); 
+        const code = await sock.requestPairingCode(num.trim());
+        res.json({ code: code });
+    } catch (err) {
+        res.status(500).json({ error: "Engine Busy. Try again in 30s." });
+    }
 });
 
+loadCommands();
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server live on ${PORT}`);
-    startEngine(); // Start Initial Instance
+    startBot();
 });
