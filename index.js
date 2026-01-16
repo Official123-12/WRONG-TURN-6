@@ -1,4 +1,11 @@
-const { default: makeWASocket, delay, makeCacheableSignalKeyStore, DisconnectReason, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { 
+    default: makeWASocket, 
+    delay, 
+    makeCacheableSignalKeyStore, 
+    DisconnectReason, 
+    initAuthCreds, // Hapa ndio tumerekebisha!
+    useMultiFileAuthState 
+} = require("@whiskeysockets/baileys");
 const express = require("express");
 const pino = require("pino");
 const mongoose = require("mongoose");
@@ -11,10 +18,12 @@ app.use(express.static('public'));
 
 let sock;
 
-// --- CLOUD AUTH STORAGE (No Local Files) ---
+// --- CLOUD AUTH LOGIC (MONGODB) ---
 async function useMongoDBAuthState() {
-    let session = await Session.findOne({ id: "stanytz_wt6_session" });
-    const creds = session ? session.creds : require("@whiskeysockets/baileys").AuthUtils.initAuthCreds();
+    let session = await Session.findOne({ id: "stanytz_wt6_matrix" });
+    
+    // Kama session ipo, itumie. Kama haipo, tengeneza creds mpya
+    const creds = session ? session.creds : initAuthCreds();
 
     return {
         state: {
@@ -23,7 +32,7 @@ async function useMongoDBAuthState() {
         },
         saveCreds: async () => {
             await Session.findOneAndUpdate(
-                { id: "stanytz_wt6_session" },
+                { id: "stanytz_wt6_matrix" },
                 { creds },
                 { upsert: true }
             );
@@ -32,7 +41,7 @@ async function useMongoDBAuthState() {
 }
 
 async function startEngine(num = null, res = null) {
-    // Connect to DB first to avoid MongooseError
+    // Hakikisha DB imeunganishwa kwanza
     if (mongoose.connection.readyState !== 1) {
         await mongoose.connect(config.mongoUri);
     }
@@ -43,30 +52,31 @@ async function startEngine(num = null, res = null) {
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: ["Ubuntu", "Chrome", "20.0.04"], // Safe for iPhone
+        browser: ["Ubuntu", "Chrome", "20.0.04"],
         syncFullHistory: true
     });
 
-    // PAIRING LOGIC (Fixed for Fail/Precondition)
+    // PAIRING LOGIC (Fixed for Precondition Error)
     if (!sock.authState.creds.registered && num) {
         try {
-            await delay(15000); // 15s delay for system stability
+            console.log(`Matrix: Deploying Pairing for ${num}`);
+            await delay(15000); // 15s Delay kuzuia Render Choking
             const code = await sock.requestPairingCode(num.trim());
             if (res && !res.headersSent) res.json({ code });
         } catch (e) {
-            if (res && !res.headersSent) res.status(500).json({ error: "System Busy. Retry in 1 min." });
+            console.error("Pairing Error:", e.message);
+            if (res && !res.headersSent) res.status(500).json({ error: "System Booting... Try again in 30s" });
         }
     }
 
     sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on("connection.update", async (u) => {
-        const { connection, lastDisconnect } = u;
+    sock.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
         if (connection === "open") {
-            console.log("🚀 WRONG TURN 6: ONLINE");
-            // Welcome Manual to User
-            const manual = `🚀 *WRONG TURN 6 CONNECTED* 🚀\n\nWelcome Master *STANYTZ*.\n\n*MANUAL:*\n1. .menu - View Hubs.\n2. .settings - Bot Config.\n3. Anti-Delete & View-Once: [ACTIVE] ✔️\n\n*Status:* Always Online (Cloud Sync)`;
-            await sock.sendMessage(sock.user.id, { text: manual });
+            console.log("🚀 WRONG TURN 6: ENGINE 100% LIVE ON CLOUD!");
+            await sock.sendPresenceUpdate('available'); 
+            await sock.sendMessage(sock.user.id, { text: "🚀 *WRONG TURN 6 CONNECTED!*\n\nMaster: *STANYTZ*\nSession: *Cloud Secured* ✅" });
         }
         if (connection === "close") {
             const reason = lastDisconnect?.error?.output?.statusCode;
@@ -79,5 +89,15 @@ async function startEngine(num = null, res = null) {
     });
 }
 
-app.get("/get-code", (req, res) => startEngine(req.query.num, res));
-app.listen(3000, () => startEngine());
+// Pair Endpoint kwa ajili ya Website yako
+app.get("/get-code", async (req, res) => {
+    const num = req.query.num;
+    if (!num) return res.status(400).json({ error: "Provide Number!" });
+    await startEngine(num, res);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server live on ${PORT}`);
+    startEngine(); // Start Initial Instance
+});
