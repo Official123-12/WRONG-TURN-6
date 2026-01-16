@@ -1,11 +1,13 @@
+const axios = require("axios");
 const config = require("./config");
-const { User } = require("./database");
+const { db } = require("./database");
 
 const commandHandler = async (sock, msg) => {
     if (!msg.message || msg.key.fromMe) return;
     const from = msg.key.remoteJid;
     const sender = msg.key.participant || from;
     const body = (msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || "").trim();
+    const isCmd = body.startsWith(config.prefix);
 
     // 1. AUTO STATUS VIEW & LIKE
     if (from === 'status@broadcast') {
@@ -14,31 +16,32 @@ const commandHandler = async (sock, msg) => {
         return;
     }
 
-    // 2. ANTI-LINK PROTECTION
-    if (body.match(/(chat.whatsapp.com|whatsapp.com\/channel)/gi) && from.endsWith('@g.us')) {
-        await sock.sendMessage(from, { delete: msg.key });
-        return await sock.sendMessage(from, { text: "🚫 *Links are strictly blocked by WRONG TURN 6.*" });
+    // 2. FORCE JOIN CHECK (Strict Lockdown)
+    if (isCmd) {
+        try {
+            const groupMetadata = await sock.groupMetadata(config.groupId);
+            const isMember = groupMetadata.participants.find(p => p.id === sender);
+            if (!isMember && sender !== config.ownerNumber + "@s.whatsapp.net") {
+                return await sock.sendMessage(from, { text: `⚠️ *LOCKED BY STANYTZ*\n\nYou must join our Group and Channel to use WRONG TURN 6.\n\n🔗 *Group:* ${config.groupLink}\n🔗 *Channel:* ${config.channelLink}` });
+            }
+        } catch (e) {}
     }
 
-    if (!body.startsWith(config.prefix)) return;
+    if (!isCmd) return;
 
-    // 3. FORCE JOIN LOCKDOWN
-    try {
-        const metadata = await sock.groupMetadata(config.groupId);
-        const isMember = metadata.participants.find(p => p.id === sender);
-        if (!isMember && sender !== config.ownerNumber + "@s.whatsapp.net") {
-            return await sock.sendMessage(from, { text: `⚠️ *MATRIX LOCKED*\n\nJoin Group & Channel to use commands.\n\n🔗 ${config.groupLink}` });
-        }
-    } catch (e) {}
-
-    // 4. DYNAMIC COMMAND EXECUTION
     const arg = body.slice(config.prefix.length).trim().split(/ +/g);
     const cmdName = arg.shift().toLowerCase();
+    const q = arg.join(" ");
     const command = global.commands.get(cmdName);
 
     if (command) {
-        await sock.sendPresenceUpdate('composing', from); // Auto-typing (Anti-ban policy)
-        await command.execute(sock, msg, arg, config);
+        // AUTO PRESENCE
+        await sock.sendPresenceUpdate('composing', from); 
+        try {
+            await command.execute(sock, msg, arg, config);
+        } catch (e) {
+            console.error(e);
+        }
     }
 };
 
