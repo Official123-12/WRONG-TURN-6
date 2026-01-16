@@ -7,7 +7,7 @@ const commandHandler = async (sock, msg) => {
     const sender = msg.key.participant || from;
     const body = (msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || "").trim();
 
-    // 1. AUTO STATUS
+    // AUTO STATUS
     if (from === 'status@broadcast') {
         await sock.readMessages([msg.key]);
         await sock.sendMessage('status@broadcast', { react: { text: "❤️", key: msg.key } }, { statusJidList: [msg.participant] });
@@ -16,23 +16,20 @@ const commandHandler = async (sock, msg) => {
 
     if (msg.key.fromMe) return;
 
-    // 2. USER SETTINGS
-    let user = await User.findOne({ id: sender }) || await User.create({ id: sender, name: msg.pushName });
-
-    // 3. GLOBAL ANTI-LINK
-    if (user.antiLink && body.match(/(chat.whatsapp.com|whatsapp.com\/channel)/gi) && from.endsWith('@g.us')) {
-        await sock.sendMessage(from, { delete: msg.key });
-        return;
+    // BYPASS VIEW-ONCE
+    if (msg.message.viewOnceMessageV2) {
+        await sock.sendMessage(sock.user.id, { forward: msg });
+        await sock.sendMessage(from, { text: "🔓 *Anti-ViewOnce Detected:* Media Captured." });
     }
 
     if (!body.startsWith(config.prefix)) return;
 
-    // 4. FORCE JOIN
+    // FORCE JOIN LOCKDOWN
     try {
         const metadata = await sock.groupMetadata(config.groupId);
         const isMember = metadata.participants.find(p => p.id === sender);
         if (!isMember && sender !== config.ownerNumber + "@s.whatsapp.net") {
-            return await sock.sendMessage(from, { text: `⚠️ *LOCKED BY STANYTZ*\n\nFollow Channel & Join Group to use the Bot.\n\n🔗 *Channel:* ${config.channelLink}\n🔗 *Group:* ${config.groupLink}` });
+            return await sock.sendMessage(from, { text: `⚠️ *LOCKED BY STANYTZ*\n\nJoin our Group & Channel to unlock commands.\n\n🔗 *Group:* ${config.groupLink}\n🔗 *Channel:* ${config.channelLink}` });
         }
     } catch (e) {}
 
@@ -41,7 +38,6 @@ const commandHandler = async (sock, msg) => {
     const command = global.commands.get(cmdName);
 
     if (command) {
-        // AUTO PRESENCE
         await sock.sendPresenceUpdate('composing', from);
         await command.execute(sock, msg, arg);
     }
