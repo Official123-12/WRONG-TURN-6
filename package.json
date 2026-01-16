@@ -1,21 +1,18 @@
 {
-  "name": "wrongturn6-bot",
-  "version": "6.0.0",
-  "description": "WhatsApp Bot by STANYTZ",
+  "name": "wrong-turn-6",
+  "version": "7.7.7",
+  "description": "Universal Omnipotent OS by STANYTZ",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
+  "scripts": { "start": "node index.js" },
   "dependencies": {
-    "@whiskeysockets/baileys": "6.4.0",
+    "@whiskeysockets/baileys": "6.6.0",
+    "mongoose": "latest",
+    "pino": "8.14.0",
     "express": "^4.18.2",
-    "mongoose": "^8.0.3",
-    "pino": "^8.15.1"
+    "axios": "latest",
+    "node-cron": "latest",
+    "cors": "latest"
   },
-  "engines": {
-    "node": "18.x"
-  },
-  "keywords": ["whatsapp-bot"],
-  "author": "STANYTZ"
+  "author": "STANYTZ",
+  "license": "MIT"
 }
