@@ -5,10 +5,12 @@ const config = require('./config');
 
 async function createBotSession(sessionData) {
     try {
-        // Get or create credentials
+        console.log(`🚀 Creating bot session for: ${sessionData.phoneNumber}`);
+        
+        // Initialize credentials
         let creds = sessionData.creds || initAuthCreds();
         
-        // Create WhatsApp socket
+        // Create WhatsApp socket with pairing code option
         const sock = makeWASocket({
             auth: {
                 creds,
@@ -17,7 +19,8 @@ async function createBotSession(sessionData) {
             logger: pino({ level: "fatal" }),
             printQRInTerminal: false,
             browser: ["WRONG TURN 6", "Chrome", "3.0"],
-            syncFullHistory: false
+            syncFullHistory: false,
+            connectTimeoutMs: 30000
         });
         
         // Handle credentials update
@@ -35,7 +38,13 @@ async function createBotSession(sessionData) {
         
         // Handle connection updates
         sock.ev.on("connection.update", async (update) => {
-            const { connection, lastDisconnect } = update;
+            const { connection, lastDisconnect, qr } = update;
+            
+            // QR Code for pairing (if needed)
+            if (qr) {
+                console.log(`📱 QR Code generated for ${sessionData.phoneNumber}`);
+                // You can emit QR via WebSocket if needed
+            }
             
             if (connection === "open") {
                 console.log(`✅ Bot connected for ${sessionData.phoneNumber}`);
@@ -46,25 +55,13 @@ async function createBotSession(sessionData) {
                     {
                         status: 'active',
                         'connectionInfo.connectedAt': new Date(),
-                        'connectionInfo.lastSeen': new Date()
+                        'connectionInfo.lastSeen': new Date(),
+                        'connectionInfo.device': 'WhatsApp Web'
                     }
                 );
                 
-                // Send welcome message to owner
-                const welcomeMsg = `🚀 *${config.botName} IS NOW ACTIVE* 🚀\n\n` +
-                    `Welcome to *${config.botName}*\n` +
-                    `Developer: *${config.developer}*\n\n` +
-                    `*Your bot is now connected!*\n` +
-                    `Use *${config.prefix}menu* to see all commands\n\n` +
-                    `📢 Join our community:\n` +
-                    `• Group: ${config.groupLink}\n` +
-                    `• Channel: ${config.channelLink}`;
-                
-                try {
-                    await sock.sendMessage(sock.user.id, { text: welcomeMsg });
-                } catch (error) {
-                    console.error('Error sending welcome message:', error);
-                }
+                // Send welcome message
+                await sendWelcomeMessage(sock, sessionData);
             }
             
             if (connection === "close") {
@@ -80,18 +77,21 @@ async function createBotSession(sessionData) {
                     }
                 );
                 
-                // Check if we should reconnect
+                // Remove from active bots
+                global.activeBots.delete(sessionData.sessionId);
+                
+                // Auto-reconnect logic (only if not logged out)
                 const shouldReconnect = error?.output?.statusCode !== DisconnectReason.loggedOut;
-                if (shouldReconnect) {
-                    console.log(`🔄 Reconnecting ${sessionData.phoneNumber} in 10 seconds...`);
+                if (shouldReconnect && sessionData.status !== 'expired') {
+                    console.log(`🔄 Will try to reconnect ${sessionData.phoneNumber}...`);
                     setTimeout(async () => {
                         try {
                             const session = await Session.findOne({ sessionId: sessionData.sessionId });
-                            if (session) {
+                            if (session && session.status !== 'expired') {
                                 await createBotSession(session);
                             }
-                        } catch (error) {
-                            console.error('Reconnect failed:', error);
+                        } catch (err) {
+                            console.error('Reconnect failed:', err);
                         }
                     }, 10000);
                 }
@@ -113,7 +113,7 @@ async function createBotSession(sessionData) {
                 { 'connectionInfo.lastSeen': new Date() }
             );
             
-            // Handle the message (command processing)
+            // Handle the message
             await handleMessage(sock, message, sessionData);
         });
         
@@ -130,13 +130,34 @@ async function createBotSession(sessionData) {
     }
 }
 
+async function sendWelcomeMessage(sock, sessionData) {
+    try {
+        const welcomeMsg = `🚀 *${config.botName.toUpperCase()} IS NOW ACTIVE* 🚀\n\n` +
+            `Welcome to *${config.botName}*\n` +
+            `Developer: *${config.developer}*\n\n` +
+            `📱 *Connected Number:* ${sessionData.phoneNumber}\n` +
+            `⚡ *Prefix:* ${config.prefix}\n\n` +
+            `*Your bot is now ready to use!*\n` +
+            `Type *${config.prefix}menu* to see all commands\n\n` +
+            `📢 *Join our community:*\n` +
+            `• Group: ${config.groupLink}\n` +
+            `• Channel: ${config.channelLink}\n\n` +
+            `_This bot will auto-disconnect after 24 hours of inactivity._`;
+        
+        await sock.sendMessage(sock.user.id, { text: welcomeMsg });
+        console.log(`📨 Welcome message sent to ${sessionData.phoneNumber}`);
+    } catch (error) {
+        console.error('Error sending welcome message:', error);
+    }
+}
+
 async function handleMessage(sock, message, sessionData) {
     try {
         const from = message.key.remoteJid;
         const sender = message.key.participant || from;
         const body = extractMessageText(message);
         
-        if (!body) return;
+        if (!body || !from) return;
         
         // Check if message is a command
         if (body.startsWith(config.prefix)) {
@@ -146,7 +167,7 @@ async function handleMessage(sock, message, sessionData) {
             
             if (command) {
                 // Update user stats
-                await updateUserStats(sender);
+                await updateUserStats(sender, sessionData.phoneNumber);
                 
                 // Execute command
                 await command.execute(sock, message, args, sessionData);
@@ -162,9 +183,11 @@ async function handleMessage(sock, message, sessionData) {
                         from: from
                     }
                 });
-            } else if (commandName === 'menu') {
-                // Default menu command
-                await sendMenu(sock, from, sessionData);
+            } else {
+                // Unknown command
+                await sock.sendMessage(from, {
+                    text: `❌ Unknown command: *${commandName}*\n\nType *${config.prefix}menu* to see available commands.`
+                });
             }
         }
         
@@ -187,62 +210,21 @@ function extractMessageText(message) {
     ).trim();
 }
 
-async function updateUserStats(userId) {
+async function updateUserStats(userId, phoneNumber) {
     try {
         await User.findOneAndUpdate(
             { userId },
             {
                 $inc: { 'stats.commandsUsed': 1 },
-                $set: { 'stats.lastActive': new Date() }
+                $set: { 
+                    'stats.lastActive': new Date(),
+                    phoneNumber: phoneNumber
+                }
             },
             { upsert: true, new: true }
         );
     } catch (error) {
         console.error('Error updating user stats:', error);
-    }
-}
-
-async function sendMenu(sock, from, sessionData) {
-    try {
-        const menuText = `
-╔═══════════════════════
-║  *${config.botName.toUpperCase()}*
-║  ────────────────────
-║  👑 Developer: ${config.developer}
-║  📱 Connected: ${sessionData.phoneNumber}
-║  ⚡ Prefix: ${config.prefix}
-║  ────────────────────
-║  📁 *OWNER COMMANDS*
-║  • ${config.prefix}menu - Show this menu
-║  • ${config.prefix}help - Show help
-║  • ${config.prefix}ping - Check bot status
-║  • ${config.prefix}status - Bot info
-║  ────────────────────
-║  📁 *GROUP COMMANDS*
-║  • ${config.prefix}antilink [on/off]
-║  • ${config.prefix}antidelete [on/off]
-║  • ${config.prefix}welcome [on/off]
-║  ────────────────────
-║  📢 *COMMUNITY LINKS*
-║  • Group: ${config.groupLink}
-║  • Channel: ${config.channelLink}
-║  ────────────────────
-║  *Type ${config.prefix}help <command>*
-║  *for detailed info*
-╚═══════════════════════
-        `;
-        
-        await sock.sendMessage(from, {
-            image: { url: config.menuImage },
-            caption: menuText.trim()
-        });
-        
-    } catch (error) {
-        console.error('Error sending menu:', error);
-        // Fallback to text only
-        await sock.sendMessage(from, {
-            text: `*${config.botName} Menu*\n\nType ${config.prefix}help to see all commands\n\nGroup: ${config.groupLink}\nChannel: ${config.channelLink}`
-        });
     }
 }
 
