@@ -1,16 +1,10 @@
 const mongoose = require('mongoose');
 
-const SessionSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    creds: { type: Object }
-});
-
+const SessionSchema = new mongoose.Schema({ id: String, data: String });
 const UserSchema = new mongoose.Schema({
     id: { type: String, unique: true },
-    name: String,
     antiDelete: { type: Boolean, default: true },
     antiLink: { type: Boolean, default: true },
-    autoStatus: { type: Boolean, default: true },
     verified: { type: Boolean, default: true }
 });
 
