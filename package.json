@@ -1,18 +1,23 @@
 {
-  "name": "wrong-turn-6",
-  "version": "10.0.0",
-  "description": "Universal Firebase OS by STANYTZ",
+  "name": "wrongturn6-bot",
+  "version": "6.0.0",
+  "description": "Advanced WhatsApp Security Bot",
   "main": "bot.js",
-  "scripts": { "start": "node bot.js" },
-  "dependencies": {
-    "@whiskeysockets/baileys": "6.6.0",
-    "firebase-admin": "^12.0.0",
-    "pino": "8.14.0",
-    "express": "^4.18.2",
-    "axios": "latest",
-    "cors": "latest",
-    "node-cron": "latest"
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
   },
-  "author": "STANYTZ",
-  "license": "MIT"
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.4.0",
+    "express": "^4.18.2",
+    "pino": "^8.15.0",
+    "firebase-admin": "^11.11.0",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.3.1",
+    "axios": "^1.5.0",
+    "form-data": "^4.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
 }
