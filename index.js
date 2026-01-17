@@ -1,10 +1,10 @@
 const { 
     default: makeWASocket, 
-    useMultiFileAuthState, 
     DisconnectReason, 
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore,
-    getContentType
+    useMultiFileAuthState, 
+    fetchLatestBaileysVersion, 
+    makeCacheableSignalKeyStore, 
+    getContentType 
 } = require("@whiskeysockets/baileys");
 const admin = require("firebase-admin");
 const express = require("express");
@@ -12,85 +12,68 @@ const pino = require("pino");
 const fs = require("fs-extra");
 const path = require("path");
 
-// 1. FIREBASE CONFIG (Nimeiweka hapa ndani moja kwa moja kuzuia error)
+// 1. FIREBASE CREDENTIALS (STANYTZ CONFIG)
 const serviceAccount = {
   "type": "service_account",
   "project_id": "stanybots",
   "private_key_id": "746be8a70fe0db83f0436d9d030c46c47d7c84f6",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcpy6S8a0fJbRT\n7mcDBeJgh1Q4i0M296SiI/fq6YkJ5adOh9zQd70Km5tLttt9IajHJ1NdSjZLSnGT\n3NSTsvUxB2PoWPSZtqsL0AyDLmoJx3PEGel5EBvPpD3NWfu9kaTdF9OMKuu2WZUj\nxW4S9HX0M9KAuSCdTFRVCWFozEqf2e+7Obhj8bFIUbUICjqLSh9SsKtxdGxJ9wq0\n6BttfemM2/GhseCuRfu7/0bmiYjbqAwGTEuw3uuKW6+r6sQV5+068E3yjAIgYj3B\n82v7Zwt8XytJfGa6CV+Kj1esHytQPJJ4+x5fpwW0b0mMq6y6Tp77+wiqXQwle5zB\n6rI5CzxnAgMBAAECggEAFEgpt8gPKbXFhZF8VoLL9CN8UlY6r2rD70NvHmCpAAfk\nAQvr+B2JetgixirgsffOE8BBoWmY5ALLvdOmloz0jLUpMco7cYWg400UWVqC1LNI\nqNXY6A/a/pMSOzXyNdKVXN07zL6FPBWv58HWBFgEH5ZD2yEpJkxF1CswkPl2QosR\n/zqeRYuYjWRica/ztaizNk+NC4cy7h0uqiLzA0BYJn/ZTkOypTkYvUafoQEKxtsp\nvZrEQ+d4p/2wLYF9SnWv218Y9b5fsZJESzaUQbNazNZwcNaSFFYmiY2dTm5pleOU\nPfFcYm8eQukVxcN4KORWc7BmUxaxBGHW+1mBSyX3QQKBgQD84KRIMODhT5sP3bel\nDFOVKOg3i6PhUMigkXrXJIUsHPibd63pnVEeXr850fVuRBVERXjpBlC+aMoA90Tz\nzaSLILPY5WIniePLH6ben5T3wC9iYU0wO3ZkwJqW1jZ47CfCnxrmv70TpuPP/kKc\nMnMDyxMpb4zCHzG6YREVIXYeRQKBgQDfYK1XtuVgaxMf+kjV2jp/U3t54uobPH3D\n65pDrnslLZfe6eNJ+woHlxKgTgFqJnMjLGff1Tu1e7t99CbieRfEplmCyNttzHdm\nKXyCzr+G+llgkNpvfIZHS6ZEksay41oTcO0JkSVpTCCxs2osOSICM6yhi9qnYvre\nE/7QOviguwKBgQDbJ2CYw+uQuKnc5T0LyBQD2BDwWo+rbJSDO7FnFNppMa5vJhhN\nty4fEOPPG1wFtPFtWnwAD54Ydr5ieemDFXx9qtjSp3EabRFC72px04GJ+T/XlhYM\nL+xaQuV2xa0tvRR0QelRg2g8yMz0bBmUPtCYv/0aUvd9IQW6zfa9BmPUtQKBgC42\nG+ZHihB2VlCJQMQtD2kD5kmC7heQXhxIA3P5BrTcR8zv6fuGGb8UO+A6AwToy2z9\ZMfjnySeYl1eQyUbFBW0rFPoJa0DXbge4QlWqDzOUesuTGJACq95MP6CtuSPMDVR\naVhPVMQB4cmhaleXwjdeZVpOSn/SdD+5Nz/w0zq9AoGAO7j7hc9SRacoTUU2MJOT\n6+y8q1hFUuOb+tb3LwHzkdQ5kyHyNs5PT0Ib994jAon7Ocfl8bL6ILtNDMBiKVXf\nkg3B0lPkRSW+cDAUAENasCH3OrQrlYVceYnmu/Yc2K3nOvoJS2BLiGa/aCjCPHE2\nNVhK+Ycb7OpMDt2fyWIkyEY=\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk-fbsvc@stanybots.iam.gserviceaccount.com",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40stanybots.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcpy6S8a0fJbRT\n7mcDBeJgh1Q4i0M296SiI/fq6YkJ5adOh9zQd70Km5tLttt9IajHJ1NdSjZLSnGT\n3NSTsvUxB2PoWPSZtqsL0AyDLmoJx3PEGel5EBvPpD3NWfu9kaTdF9OMKuu2WZUj\nxW4S9HX0M9KAuSCdTFRVCWFozEqf2e+7Obhj8bFIUbUICjqLSh9SsKtxdGxJ9wq0\n6BttfemM2/GhseCuRfu7/0bmiYjbqAwGTEuw3uuKW6+r6sQV5+068E3yjAIgYj3B\n82v7Zwt8XytJfGa6CV+Kj1esHytQPJJ4+x5fpwW0b0mMq6y6Tp77+wiqXQwle5zB\n6rI5CzxnAgMBAAECggEAFEgpt8gPKbXFhZF8VoLL9CN8UlY6r2rD70NvHmCpAAfk\nAQvr+B2JetgixirgsffOE8BBoWmY5ALLvdOmloz0jLUpMco7cYWg400UWVqC1LNI\nqNXY6A/a/pMSOzXyNdKVXN07zL6FPBWv58HWBFgEH5ZD2yEpJkxF1CswkPl2QosR\n/zqeRYuYjWRica/ztaizNk+NC4cy7h0uqiLzA0BYJn/ZTkOypTkYvUafoQEKxtsp\nvZrEQ+d4p/2wLYF9SnWv218Y9b5fsZJESzaUQbNazNZwcNaSFFYmiY2dTm5pleOU\nPfFcYm8eQukVxcN4KORWc7BmUxaxBGHW+1mBSyX3QQKBgQD84KRIMODhT5sP3bel\nDFOVKOg3i6PhUMigkXrXJIUsHPibd63pnVEeXr850fVuRBVERXjpBlC+aMoA90Tz\nzaSLILPY5WIniePLH6ben5T3wC9iYU0wO3ZkwJqW1jZ47CfCnxrmv70TpuPP/kKc\nMnMDyxMpb4zCHzG6YREVIXYeRQKBgQDfYK1XtuVgaxMf+kjV2jp/U3t54uobPH3D\n65pDrnslLZfe6eNJ+woHlxKgTgFqJnMjLGff1Tu1e7t99CbieRfEplmCyNttzHdm\nKXyCzr+G+llgkNpvfIZHS6ZEksay41oTcO0JkSVpTCCxs2osOSICM6yhi9qnYvre\nE/7QOviguwKBgQDbJ2CYw+uQuKnc5T0LyBQD2BDwWo+rbJSDO7FNppMa5vJhhN\nty4fEOPPG1wFtPFtWnwAD54Ydr5ieemDFXx9qtjSp3EabRFC72px04GJ+T/XlhYM\nL+xaQuV2xa0tvRR0QelRg2g8yMz0bBmUPtCYv/0aUvd9IQW6zfa9BmPUtQKBgC42\nG+ZHihB2VlCJQMQtD2kD5kmC7heQXhxIA3P5BrTcR8zv6fuGGb8UO+A6AwToy2z9\ZMfjnySeYl1eQyUbFBW0rFPoJa0DXbge4QlWqDzOUesuTGJACq95MP6CtuSPMDVR\naVhPVMQB4cmhaleXwjdeZVpOSn/SdD+5Nz/w0zq9AoGAO7j7hc9SRacoTUU2MJOT\n6+y8q1hFUuOb+tb3LwHzkdQ5kyHyNs5PT0Ib994jAon7Ocfl8bL6ILtNDMBiKVXf\nkg3B0lPkRSW+cDAUAENasCH3OrQrlYVceYnmu/Yc2K3nOvoJS2BLiGa/aCjCPHE2\nNVhK+Ycb7OpMDt2fyWIkyEY=\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@stanybots.iam.gserviceaccount.com"
 };
 
-// 2. INITIALIZE FIREBASE WITH ERROR CHECKING
-try {
-    if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        console.log("✅ Firebase Connected: " + serviceAccount.project_id);
-    }
-} catch (error) {
-    console.error("❌ Firebase Init Error:", error.message);
+if (!admin.apps.length) {
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
-
 const db = admin.firestore();
 
-// 3. COMMAND LOADER (Dynamic Categories)
+// 2. COMMAND LOADER
 const commands = new Map();
 const loadCommands = () => {
     const cmdPath = path.join(__dirname, 'commands');
     if (!fs.existsSync(cmdPath)) fs.mkdirSync(cmdPath);
-    
-    const folders = fs.readdirSync(cmdPath);
-    folders.forEach(folder => {
+    fs.readdirSync(cmdPath).forEach(folder => {
         const folderPath = path.join(cmdPath, folder);
         if (fs.lstatSync(folderPath).isDirectory()) {
-            const files = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
-            files.forEach(file => {
-                const cmd = require(path.join(folderPath, file));
-                cmd.category = folder; // Auto-grouping by folder name
-                commands.set(cmd.name, cmd);
+            fs.readdirSync(folderPath).forEach(file => {
+                if (file.endsWith('.js')) {
+                    const cmd = require(path.join(folderPath, file));
+                    cmd.category = folder;
+                    commands.set(cmd.name, cmd);
+                }
             });
         }
     });
-    console.log(`📡 WRONG TURN 6: Loaded ${commands.size} Commands`);
 };
 loadCommands();
 
 const app = express();
+app.use(express.static('public'));
 
 async function startBot() {
+    // FIX: Tunapitisha COLLECTION pekee, sio Document.
     const { useFirebaseAuthState } = require("./lib/firestoreAuth");
-    
-    // Sessions zitahifadhiwa kwenye collection inayoitwa "sessions" na document "WT6"
-    const { state, saveCreds } = await useFirebaseAuthState(db.collection("sessions").doc("WT6"));
+    const sessionCollection = db.collection("WRONG_TURN_6_SESSIONS");
+    const { state, saveCreds } = await useFirebaseAuthState(sessionCollection);
 
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ["WRONG TURN 6", "Chrome", "1.0.0"]
+        browser: ["WRONG TURN 6", "MacOS", "3.0.0"]
     });
 
-    // Pairing Code Route
+    // PAIRING CODE ENDPOINT
     app.get('/code', async (req, res) => {
         let num = req.query.number;
-        if (!num) return res.status(400).send({ error: "No number provided" });
+        if (!num) return res.status(400).send({ error: "Weka namba!" });
         try {
             let code = await sock.requestPairingCode(num.replace(/[^0-9]/g, ''));
             res.send({ code });
         } catch (e) {
-            console.log(e);
-            res.status(500).send({ error: "Pairing failed" });
+            res.status(500).send({ error: "Haikuweza kupata code" });
         }
     });
 
-    // Serve Pairing Page
     app.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/index.html'));
     });
@@ -100,15 +83,12 @@ async function startBot() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'open') {
-            console.log("✔️ WRONG TURN 6 IS ONLINE AND READY!");
-            sock.sendPresenceUpdate('available'); // Always Online
+            console.log("✅ WRONG TURN 6 IMEWAKA!");
+            sock.sendPresenceUpdate('available'); 
         }
         if (connection === 'close') {
             const reason = lastDisconnect?.error?.output?.statusCode;
-            if (reason !== DisconnectReason.loggedOut) {
-                console.log("Connection lost. Reconnecting...");
-                startBot();
-            }
+            if (reason !== DisconnectReason.loggedOut) startBot();
         }
     });
 
@@ -117,40 +97,44 @@ async function startBot() {
         if (!m.message || m.key.fromMe) return;
 
         const from = m.key.remoteJid;
-        const type = getContentType(m.message);
-        const body = (type === 'conversation') ? m.message.conversation : 
-                     (type === 'extendedTextMessage') ? m.message.extendedTextMessage.text : 
-                     (type === 'imageMessage') ? m.message.imageMessage.caption : 
-                     (type === 'videoMessage') ? m.message.videoMessage.caption : '';
-        
+        const body = m.message.conversation || m.message.extendedTextMessage?.text || "";
         const prefix = ".";
-        if (body.startsWith(prefix)) {
-            const args = body.slice(prefix.length).trim().split(/ +/);
-            const cmdName = args.shift().toLowerCase();
-            const cmd = commands.get(cmdName);
-            
-            if (cmd) {
-                await cmd.execute(m, sock, Array.from(commands.values()), args);
-            }
+
+        // ANTI-LINK
+        if (body.includes("chat.whatsapp.com") || body.includes("http")) {
+            await sock.sendMessage(from, { delete: m.key });
         }
 
         // AUTO STATUS VIEW
         if (from === 'status@broadcast') {
             await sock.readMessages([m.key]);
-            console.log(`✅ Status Viewed: ${m.pushName}`);
+        }
+
+        // COMMAND HANDLER
+        if (body.startsWith(prefix)) {
+            const args = body.slice(prefix.length).trim().split(/ +/);
+            const cmdName = args.shift().toLowerCase();
+            const cmd = commands.get(cmdName);
+            if (cmd) {
+                try {
+                    await cmd.execute(m, sock, Array.from(commands.values()), args);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
         }
     });
 
-    // SECURITY: Anti-Call
-    sock.ev.on('call', async (node) => {
-        if (node[0].status === 'offer') {
-            await sock.rejectCall(node[0].id, node[0].from);
-            await sock.sendMessage(node[0].from, { text: "📵 *WRONG TURN 6 SECURITY*\nCalls are blocked by STANYTZ." });
+    // ANTI-CALL
+    sock.ev.on('call', async (c) => {
+        if (c[0].status === 'offer') {
+            await sock.rejectCall(c[0].id, c[0].from);
+            await sock.sendMessage(c[0].from, { text: "📵 *SECURITY:* WRONG TURN 6 Calls Blocked." });
         }
     });
 }
 
 app.listen(3000, () => {
-    console.log("Pairing Server: http://localhost:3000");
+    console.log("Server active: Port 3000");
     startBot();
 });
