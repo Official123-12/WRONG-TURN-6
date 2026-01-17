@@ -1,24 +1,55 @@
+require('dotenv').config();
+
 module.exports = {
-    // --- 1. BOT IDENTITY ---
-    botName: "WRONG TURN 6",
-    ownerName: "STANYTZ",
-    ownerNumber: "255618558502", 
-    prefix: ".", 
-
-    // --- 2. MEDIA ASSETS ---
-    menuImage: "https://files.catbox.moe/07uq2a.jpg",
-
-    // --- 3. SOCIAL HUB LINKS ---
-    channelLink: "https://whatsapp.com/channel/0029Vb7fzu4EwEjmsD4Tzs1p",
-    groupLink: "https://chat.whatsapp.com/J19JASXoaK0GVSoRvShr4Y",
+    // STANY CODES
+    botName: process.env.BOT_NAME || "WRONG TURN 6",
+    ownerName: process.env.OWNER_NAME || "STANYTZ",
+    ownerNumber: process.env.OWNER_NUMBER || "255618558502@s.whatsapp.net",
+    ownerJid: process.env.OWNER_JID || "255618558502@s.whatsapp.net",
+    prefix: process.env.BOT_PREFIX || ".",
     
-    // --- 4. SECURITY & LOCKDOWN ---
-    groupId: "120363302194515518@g.us", 
-
-    // --- 5. SYSTEM SETTINGS ---
-    autoStatusView: true,
-    autoStatusLike: true,
-    antiLink: true,
-    antiDelete: true,
-    alwaysOnline: true
+    // Session
+    sessionName: process.env.BOT_SESSION || "wt6_master_session",
+    
+    // Security Settings
+    antiDelete: process.env.ANTI_DELETE === 'true',
+    antiLink: process.env.ANTI_LINK === 'true',
+    antiSpam: process.env.ANTI_SPAM === 'true',
+    antiPorn: process.env.ANTI_PORN === 'true',
+    swearFilter: process.env.SWEAR_FILTER === 'true',
+    viewOnceCapture: process.env.VIEW_ONCE_CAPTURE === 'true',
+    autoTyping: process.env.AUTO_TYPING === 'true',
+    autoStatusView: process.env.AUTO_STATUS_VIEW === 'true',
+    
+    // Auto Reply Settings
+    autoReply: {
+        enabled: true,
+        greeting: "Hello! I'm WRONG TURN 6 bot. How can I help you?",
+        responseDelay: 1000,
+        typingDuration: 2000
+    },
+    
+    // Links
+    channelLink: process.env.CHANNEL_LINK,
+    groupLink: process.env.GROUP_LINK,
+    groupId: process.env.GROUP_ID,
+    menuImage: process.env.MENU_IMAGE,
+    
+    // System
+    port: process.env.PORT || 3000,
+    
+    // Swear Words (Kiswahili)
+    swearWords: [
+        'mavi', 'kuma', 'mate', 'chuma', 'mnyiri', 'mtama',
+        'wazimu', 'pumbavu', 'fala', 'jinga', 'shupavu',
+        'mchepu', 'mshenzi', 'mbwa', 'punda', 'maharimu',
+        'mkolopeshi', 'kupiga', 'kufua', 'kukata'
+    ],
+    
+    // Allowed Domains
+    allowedDomains: [
+        'google.com', 'youtube.com', 'whatsapp.com',
+        'instagram.com', 'facebook.com', 'twitter.com',
+        'github.com', 'wikipedia.org', 'stackoverflow.com'
+    ]
 };
