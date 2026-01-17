@@ -9,7 +9,19 @@ try {
     // Check if we have Firebase credentials
     if (config.firebaseConfig.privateKey && config.firebaseConfig.privateKey.length > 100) {
         admin.initializeApp({
-            credential: admin.credential.cert(config.firebaseConfig),
+            credential: admin.credential.cert({
+                type: "service_account",
+                project_id: config.firebaseConfig.projectId,
+                private_key_id: config.firebaseConfig.private_key_id,
+                private_key: config.firebaseConfig.privateKey,
+                client_email: config.firebaseConfig.clientEmail,
+                client_id: config.firebaseConfig.clientId,
+                auth_uri: "https://accounts.google.com/o/oauth2/auth",
+                token_uri: "https://oauth2.googleapis.com/token",
+                auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+                client_x509_cert_url: config.firebaseConfig.clientX509CertUrl,
+                universe_domain: "googleapis.com"
+            }),
             databaseURL: `https://${config.firebaseConfig.projectId}.firebaseio.com`
         });
         
@@ -161,7 +173,12 @@ const Group = {
             return true;
         } catch (error) {
             console.error('❌ Group save error:', error.message);
-           module.exports = {
+            return false;
+        }
+    }
+};
+
+module.exports = {
     Session,
     User,
     Group,
