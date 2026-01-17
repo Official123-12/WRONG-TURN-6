@@ -96,7 +96,9 @@ async function connectToWhatsApp() {
                     if (sock && isConnected) {
                         try {
                             await sock.sendPresenceUpdate('composing');
-                        } catch (e) {}
+                        } catch (e) {
+                            // Silent fail
+                        }
                     }
                 }, 30000);
                 
@@ -157,10 +159,15 @@ async function handleMessage(sock, msg) {
         
         // Extract message text
         let body = "";
-        if (msg.message.conversation) body = msg.message.conversation;
-        else if (msg.message.extendedTextMessage?.text) body = msg.message.extendedTextMessage.text;
-        else if (msg.message.imageMessage?.caption) body = msg.message.imageMessage.caption;
-        else if (msg.message.videoMessage?.caption) body = msg.message.videoMessage.caption;
+        if (msg.message.conversation) {
+            body = msg.message.conversation;
+        } else if (msg.message.extendedTextMessage?.text) {
+            body = msg.message.extendedTextMessage.text;
+        } else if (msg.message.imageMessage?.caption) {
+            body = msg.message.imageMessage.caption;
+        } else if (msg.message.videoMessage?.caption) {
+            body = msg.message.videoMessage.caption;
+        }
         
         body = body.trim();
         
@@ -180,8 +187,8 @@ async function handleMessage(sock, msg) {
             if (!user?.hasJoinedGroup || !user?.hasJoinedChannel) {
                 const joinMessage = `🔐 *ACCESS DENIED* 🔐\n\n` +
                                    `You must join our Group & Channel to use commands:\n\n` +
-                                   `📢 *GROUP:* ${config.groupLink}\n` +
-                                   `📡 *CHANNEL:* ${config.channelLink}\n\n` +
+                                   `📢 *GROUP:* ${config.forceJoin.groupLink}\n` +
+                                   `📡 *CHANNEL:* ${config.forceJoin.channelLink}\n\n` +
                                    `⚠️ _After joining, send ${config.prefix}verify in the group_`;
                 
                 await sock.sendMessage(from, { text: joinMessage });
