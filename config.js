@@ -1,55 +1,47 @@
 require('dotenv').config();
 
+// Firebase credentials from environment
+const firebaseConfig = {
+    projectId: process.env.FIREBASE_PROJECT_ID || "stanybots",
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n') || "",
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || "firebase-adminsdk-fbsvc@stanybots.iam.gserviceaccount.com"
+};
+
 module.exports = {
-    // STANY CODES
-    botName: process.env.BOT_NAME || "WRONG TURN 6",
-    ownerName: process.env.OWNER_NAME || "STANYTZ",
-    ownerNumber: process.env.OWNER_NUMBER || "255618558502@s.whatsapp.net",
-    ownerJid: process.env.OWNER_JID || "255618558502@s.whatsapp.net",
-    prefix: process.env.BOT_PREFIX || ".",
+    // Bot Identity
+    botName: "WRONG TURN 6",
+    ownerName: "STANYTZ",
+    ownerNumber: "255618558502@s.whatsapp.net",
+    ownerJid: "255618558502@s.whatsapp.net",
+    prefix: ".",
     
     // Session
-    sessionName: process.env.BOT_SESSION || "wt6_master_session",
+    sessionName: "wt6_master_session",
     
     // Security Settings
-    antiDelete: process.env.ANTI_DELETE === 'true',
-    antiLink: process.env.ANTI_LINK === 'true',
-    antiSpam: process.env.ANTI_SPAM === 'true',
-    antiPorn: process.env.ANTI_PORN === 'true',
-    swearFilter: process.env.SWEAR_FILTER === 'true',
-    viewOnceCapture: process.env.VIEW_ONCE_CAPTURE === 'true',
-    autoTyping: process.env.AUTO_TYPING === 'true',
-    autoStatusView: process.env.AUTO_STATUS_VIEW === 'true',
+    antiDelete: true,
+    antiLink: true,               // Blocks ALL links
+    antiSpam: true,
+    antiPorn: true,
+    swearFilter: true,
+    viewOnceCapture: true,
+    autoTyping: true,
+    autoStatusView: true,
     
-    // Auto Reply Settings
-    autoReply: {
+    // Force Join Requirements
+    forceJoin: {
         enabled: true,
-        greeting: "Hello! I'm WRONG TURN 6 bot. How can I help you?",
-        responseDelay: 1000,
-        typingDuration: 2000
+        groupLink: "https://chat.whatsapp.com/J19JASXoaK0GVSoRvShr4Y",
+        channelLink: "https://whatsapp.com/channel/0029Vb7fzu4EwEjmsD4Tzs1p",
+        groupId: "120363302194515518@g.us"
     },
     
-    // Links
-    channelLink: process.env.CHANNEL_LINK,
-    groupLink: process.env.GROUP_LINK,
-    groupId: process.env.GROUP_ID,
-    menuImage: process.env.MENU_IMAGE,
+    // Firebase
+    firebaseConfig: firebaseConfig,
     
-    // System
+    // Server
     port: process.env.PORT || 3000,
     
-    // Swear Words (Kiswahili)
-    swearWords: [
-        'mavi', 'kuma', 'mate', 'chuma', 'mnyiri', 'mtama',
-        'wazimu', 'pumbavu', 'fala', 'jinga', 'shupavu',
-        'mchepu', 'mshenzi', 'mbwa', 'punda', 'maharimu',
-        'mkolopeshi', 'kupiga', 'kufua', 'kukata'
-    ],
-    
-    // Allowed Domains
-    allowedDomains: [
-        'google.com', 'youtube.com', 'whatsapp.com',
-        'instagram.com', 'facebook.com', 'twitter.com',
-        'github.com', 'wikipedia.org', 'stackoverflow.com'
-    ]
+    // Menu
+    menuImage: "https://i.ibb.co/vz6mD7y/wrongturn.jpg"
 };
