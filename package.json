@@ -1,11 +1,12 @@
 {
   "name": "wrongturn6-bot",
   "version": "6.0.0",
-  "description": "Advanced WhatsApp Security Bot with Firebase",
+  "description": "WhatsApp Bot with Maximum Security",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "build": "echo 'No build required'",
+    "preinstall": "npm install --global node-gyp"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.4.0",
@@ -14,10 +15,19 @@
     "firebase-admin": "^11.11.0",
     "crypto-js": "^4.1.1",
     "dotenv": "^16.3.1",
-    "axios": "^1.5.0",
-    "form-data": "^4.0.0"
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "node-webcrypto-ossl": "^2.1.1"
   },
   "engines": {
-    "node": "18.x"
-  }
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "keywords": [
+    "whatsapp-bot",
+    "security",
+    "firebase"
+  ],
+  "author": "STANYTZ",
+  "license": "ISC"
 }
