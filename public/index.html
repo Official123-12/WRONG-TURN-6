@@ -1,38 +1,506 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>WRONG TURN 6 | iOS 26</title>
+    <meta charset="UTF-8">
+    <title>WRONG TURN 6 | iOS 26</title>
     <style>
-        body { background: #000; color: white; font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .iphone { width: 380px; height: 800px; background: #080808; border-radius: 60px; border: 2.5px solid red; padding: 20px; box-shadow: 0 0 100px rgba(255,0,0,0.5); text-align: center; }
-        h1 { color: red; font-size: 35px; font-weight: 900; margin-top: 80px; }
-        input { width: 85%; padding: 22px; background: rgba(255,255,255,0.03); border: 1px solid #222; border-radius: 25px; color: #fff; font-size: 18px; text-align: center; margin-bottom: 25px; outline: none; }
-        .btn { width: 85%; padding: 22px; background: red; color: white; border: none; border-radius: 25px; font-weight: 900; cursor: pointer; }
-        #pairCode { margin-top: 50px; font-size: 45px; font-weight: 900; color: #fff; letter-spacing: 12px; cursor: pointer; }
+        body { 
+            background: #000; 
+            color: white; 
+            font-family: -apple-system, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+        }
+        
+        .iphone { 
+            width: 380px; 
+            min-height: 800px; 
+            background: #080808; 
+            border-radius: 60px; 
+            border: 2.5px solid red; 
+            padding: 20px; 
+            box-shadow: 0 0 100px rgba(255,0,0,0.5); 
+            text-align: center;
+            position: relative;
+            overflow-y: auto;
+        }
+        
+        h1 { 
+            color: red; 
+            font-size: 35px; 
+            font-weight: 900; 
+            margin-top: 80px; 
+            margin-bottom: 10px;
+        }
+        
+        input { 
+            width: 85%; 
+            padding: 22px; 
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid #222; 
+            border-radius: 25px; 
+            color: #fff; 
+            font-size: 18px; 
+            text-align: center; 
+            margin-bottom: 25px; 
+            outline: none; 
+        }
+        
+        .btn { 
+            width: 85%; 
+            padding: 22px; 
+            background: red; 
+            color: white; 
+            border: none; 
+            border-radius: 25px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        
+        .btn:hover {
+            background: #c00;
+        }
+        
+        #pairCode { 
+            margin-top: 50px; 
+            font-size: 45px; 
+            font-weight: 900; 
+            color: #fff; 
+            letter-spacing: 12px; 
+            cursor: pointer;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .online {
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+        }
+        
+        .offline {
+            background: #f00;
+            box-shadow: 0 0 10px #f00;
+        }
+        
+        .info-section {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .link-btn {
+            padding: 15px 25px;
+            background: rgba(255,0,0,0.1);
+            border: 1px solid red;
+            border-radius: 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        
+        .link-btn:hover {
+            background: rgba(255,0,0,0.2);
+        }
+        
+        .instructions {
+            background: rgba(255,255,255,0.02);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: red;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .logout-btn {
+            background: rgba(255,0,0,0.1);
+            border: 1px solid #f00;
+            color: #f00;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,0,0,0.2);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+    
     <div class="iphone">
         <div style="font-size: 30px; opacity: 0.2; margin-top: 40px;">🌸🌺🌻</div>
         <h1>WRONG TURN 6</h1>
         <p style="color: #555; font-size: 10px; text-transform: uppercase;">DEVELOPER: STANYTZ</p>
-        <input type="text" id="num" placeholder="255618558502">
-        <button class="btn" onclick="getPair()">GENERATE CODE</button>
+        
+        <!-- Bot Status -->
+        <div style="margin: 20px 0;">
+            <span class="status-indicator" id="botStatus"></span>
+            <span id="statusText">Checking bot status...</span>
+        </div>
+        
+        <!-- User Stats -->
+        <div class="user-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="userCount">0</div>
+                <div class="stat-label">TOTAL USERS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="onlineCount">0</div>
+                <div class="stat-label">ONLINE NOW</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeCount">0</div>
+                <div class="stat-label">ACTIVE TODAY</div>
+            </div>
+        </div>
+        
+        <!-- Input for Number -->
+        <input type="text" id="num" placeholder="255618558502" value="255618558502">
+        <button class="btn" onclick="getPair()">GENERATE PAIRING CODE</button>
+        
+        <!-- Generated Code -->
         <div id="pairCode" onclick="copyCode()">---- ----</div>
+        
+        <!-- Links Section -->
+        <div class="links">
+            <a href="https://chat.whatsapp.com/J19JASXoaK0GVSoRvShr4Y" target="_blank" class="link-btn">
+                📱 JOIN GROUP
+            </a>
+            <a href="https://whatsapp.com/channel/0029Vb7fzu4EwEjmsD4Tzs1p" target="_blank" class="link-btn">
+                📢 JOIN CHANNEL
+            </a>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3 style="color: red; margin-bottom: 15px;">📱 HOW TO LINK DEVICE:</h3>
+            <ol style="margin: 0; padding-left: 20px;">
+                <li>Enter your WhatsApp number above</li>
+                <li>Click "GENERATE PAIRING CODE"</li>
+                <li>Copy the 8-digit code</li>
+                <li>Open WhatsApp on your phone</li>
+                <li>Go to <strong>Settings → Linked Devices</strong></li>
+                <li>Tap on <strong>"Link a Device"</strong></li>
+                <li>Select <strong>"Pair with code instead"</strong></li>
+                <li>Paste the code and wait for connection</li>
+                <li>Bot will be active immediately!</li>
+            </ol>
+        </div>
+        
+        <!-- Connection Info -->
+        <div class="info-section">
+            <h3 style="color: red; margin-bottom: 15px;">🔗 YOUR CONNECTION:</h3>
+            <div id="connectionInfo">
+                <p>Number: <span id="connectedNumber">Not connected</span></p>
+                <p>Status: <span id="connectionStatus">🔴 OFFLINE</span></p>
+                <p>Linked: <span id="linkedTime">Never</span></p>
+            </div>
+        </div>
+        
+        <!-- Logout Button -->
+        <button class="logout-btn" onclick="logoutUser()" id="logoutBtn" style="display: none;">
+            🚪 LOGOUT & REMOVE FROM SYSTEM
+        </button>
+        
+        <!-- Current Users Online -->
+        <div class="info-section">
+            <h3 style="color: red; margin-bottom: 15px;">👥 CURRENTLY ONLINE:</h3>
+            <div id="onlineUsers"></div>
+        </div>
     </div>
+
     <script>
+        // DOM Elements
+        const pairCode = document.getElementById('pairCode');
+        const botStatus = document.getElementById('botStatus');
+        const statusText = document.getElementById('statusText');
+        const userCount = document.getElementById('userCount');
+        const onlineCount = document.getElementById('onlineCount');
+        const activeCount = document.getElementById('activeCount');
+        const connectionInfo = document.getElementById('connectionInfo');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const onlineUsers = document.getElementById('onlineUsers');
+        const notification = document.getElementById('notification');
+        const connectedNumber = document.getElementById('connectedNumber');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const linkedTime = document.getElementById('linkedTime');
+        
+        // Notification function
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            notification.style.background = type === 'success' ? '#28a745' : 
+                                           type === 'error' ? '#dc3545' : '#222';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Check bot status
+        async function checkBotStatus() {
+            try {
+                const response = await fetch('/bot-status');
+                const data = await response.json();
+                
+                if (data.connected) {
+                    botStatus.className = 'status-indicator online';
+                    statusText.textContent = '🟢 BOT ONLINE';
+                    statusText.style.color = '#0f0';
+                } else {
+                    botStatus.className = 'status-indicator offline';
+                    statusText.textContent = '🔴 BOT OFFLINE';
+                    statusText.style.color = '#f00';
+                }
+            } catch (error) {
+                botStatus.className = 'status-indicator offline';
+                statusText.textContent = '❌ CONNECTION ERROR';
+                statusText.style.color = '#f00';
+            }
+        }
+        
+        // Get user statistics
+        async function getUserStats() {
+            try {
+                const response = await fetch('/user-stats');
+                const data = await response.json();
+                
+                userCount.textContent = data.totalUsers || 0;
+                onlineCount.textContent = data.onlineUsers || 0;
+                activeCount.textContent = data.activeToday || 0;
+            } catch (error) {
+                console.log('Error getting stats:', error);
+            }
+        }
+        
+        // Get pairing code
         async function getPair() {
-            const num = document.getElementById('num').value;
-            const box = document.getElementById('pairCode');
-            box.innerText = "WAITING";
-            const res = await fetch(`/get-code?num=${num}`);
-            const data = await res.json();
-            box.innerText = data.code || "FAIL";
+            const num = document.getElementById('num').value.trim();
+            
+            if (!num) {
+                showNotification('Please enter a phone number', 'error');
+                return;
+            }
+            
+            // Validate number format
+            if (!/^255\d{9}$/.test(num) && !/^\d{10,15}$/.test(num)) {
+                showNotification('Please use format: 255618558502', 'error');
+                return;
+            }
+            
+            pairCode.innerText = "GENERATING...";
+            
+            try {
+                const response = await fetch(`/pair?number=${encodeURIComponent(num)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    pairCode.innerText = data.code;
+                    showNotification('Code generated! Copy and paste in WhatsApp', 'success');
+                    
+                    // Save connected number info
+                    localStorage.setItem('connectedNumber', num);
+                    localStorage.setItem('linkedTime', new Date().toISOString());
+                    
+                    // Update connection info
+                    updateConnectionInfo();
+                    
+                    // Show logout button
+                    logoutBtn.style.display = 'block';
+                    
+                    // Refresh user stats
+                    getUserStats();
+                } else {
+                    pairCode.innerText = "---- ----";
+                    showNotification(data.error || 'Failed to generate code', 'error');
+                }
+            } catch (error) {
+                pairCode.innerText = "---- ----";
+                showNotification('Network error. Please try again', 'error');
+            }
         }
+        
+        // Copy code to clipboard
         function copyCode() {
-            navigator.clipboard.writeText(document.getElementById('pairCode').innerText);
-            alert("Code Copied!");
+            const code = pairCode.innerText;
+            
+            if (code === "---- ----" || code === "GENERATING...") {
+                showNotification('No code to copy', 'error');
+                return;
+            }
+            
+            navigator.clipboard.writeText(code.replace(/\s/g, '')).then(() => {
+                showNotification('Code copied to clipboard!', 'success');
+            });
         }
+        
+        // Update connection info
+        function updateConnectionInfo() {
+            const savedNumber = localStorage.getItem('connectedNumber');
+            const savedTime = localStorage.getItem('linkedTime');
+            
+            if (savedNumber) {
+                connectedNumber.textContent = savedNumber;
+                connectionStatus.textContent = '🟢 CONNECTED';
+                connectionStatus.style.color = '#0f0';
+                
+                if (savedTime) {
+                    const time = new Date(savedTime);
+                    linkedTime.textContent = time.toLocaleString();
+                }
+                
+                logoutBtn.style.display = 'block';
+            }
+        }
+        
+        // Logout user
+        async function logoutUser() {
+            const num = localStorage.getItem('connectedNumber');
+            
+            if (!num) {
+                showNotification('No user to logout', 'error');
+                return;
+            }
+            
+            if (confirm('Are you sure? This will remove your connection from the system.')) {
+                try {
+                    const response = await fetch(`/logout?number=${encodeURIComponent(num)}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Clear local storage
+                        localStorage.removeItem('connectedNumber');
+                        localStorage.removeItem('linkedTime');
+                        
+                        // Reset UI
+                        connectedNumber.textContent = 'Not connected';
+                        connectionStatus.textContent = '🔴 OFFLINE';
+                        connectionStatus.style.color = '#f00';
+                        linkedTime.textContent = 'Never';
+                        logoutBtn.style.display = 'none';
+                        pairCode.innerText = '---- ----';
+                        
+                        showNotification('Logged out successfully', 'success');
+                        
+                        // Refresh stats
+                        getUserStats();
+                    } else {
+                        showNotification(data.error || 'Logout failed', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Network error during logout', 'error');
+                }
+            }
+        }
+        
+        // Get online users
+        async function getOnlineUsers() {
+            try {
+                const response = await fetch('/online-users');
+                const data = await response.json();
+                
+                if (data.users && data.users.length > 0) {
+                    onlineUsers.innerHTML = data.users.map(user => 
+                        `<div style="margin: 5px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                            👤 ${user.number} - ${user.time}
+                        </div>`
+                    ).join('');
+                } else {
+                    onlineUsers.innerHTML = '<p style="color: #888; font-style: italic;">No users online</p>';
+                }
+            } catch (error) {
+                onlineUsers.innerHTML = '<p style="color: #f00;">Error loading users</p>';
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check bot status
+            checkBotStatus();
+            
+            // Get user stats
+            getUserStats();
+            
+            // Update connection info
+            updateConnectionInfo();
+            
+            // Get online users
+            getOnlineUsers();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                checkBotStatus();
+                getUserStats();
+                getOnlineUsers();
+            }, 30000);
+        });
     </script>
 </body>
 </html>
